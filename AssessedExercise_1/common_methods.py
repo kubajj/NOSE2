@@ -23,6 +23,14 @@ def send_file(sock, filename):
             # Return with failure code
             return 1
 
+        # Check if file is too large e.g. > 5 GB
+        actual_size = os.path.getsize(filename)
+        if actual_size > 5*2**30:
+            sock.send("-5".encode('utf-8'))
+            print("File too large.")
+            # Return with failure code
+            return 1
+
         # Load data
         now1 = time.time()
         with open(filename, "rb", ) as file:
@@ -40,7 +48,6 @@ def send_file(sock, filename):
                   filename, "of size", filesize, "at", speed)
 
         # Check if data loaded correctly
-        actual_size = os.path.getsize(filename)
         if not size == actual_size:
             # Size of data read does not match size of file
             sock.send("-2".encode('utf-8'))
@@ -91,6 +98,11 @@ def recv_file(sock, filename):
         if filesize == "d":
             # File is directory code received
             print("File is directory.")
+            # Return with failure code
+            return 1
+        elif filesize == "-5":
+            # File is bigger than 5 GB
+            print("File too large.")
             # Return with failure code
             return 1
         elif int(filesize) == -1:
@@ -206,7 +218,16 @@ def send_listing(sock):
         to_send = "/" + "//".join(listing) + "/"
         # Each file is now surrounded by two "/", so we know where it starts and ends
         sock.sendall(to_send.encode('utf-8'))
-        return 0
+        # Accept status code from recipient
+        status = int(sock.recv(1024).decode('utf-8'))
+        if status == 0:
+            # Return with success code
+            return 0
+        else:
+            # Bad transmission, listing size does not match size of received list
+            print("Transmission error occurred.")
+            # Return with failure code
+            return 1
     except Exception as exp:
         print(exp)
         return 1
@@ -261,11 +282,21 @@ def recv_listing(sock):
             for filename in received_names:
                 if not filename == "":
                     listing.append(filename)
-        # Print listing
-        for file in listing:
-            print(file)
-        # Return with success code
-        return 0
+        if len(listing) == list_size:
+            # Print listing
+            for file in listing:
+                print(file)
+            # Send status code to sender
+            sock.sendall(str(0).encode('utf-8'))
+            # Return with success code
+            return 0
+        else:
+            # Bad transmission, listing size does not match size of received list
+            print("Transmission error occurred.")
+            # Send status code to sender
+            sock.sendall(str(-1).encode('utf-8'))
+            # Return with failure code
+            return 1
     except Exception as exp:
         print(exp)
         return 1
