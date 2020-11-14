@@ -282,7 +282,8 @@ def recv_listing(sock):
             for filename in received_names:
                 if not filename == "":
                     listing.append(filename)
-        if len(listing) == list_size:
+        if len(listing) == list_sizeb.com\
+                :
             # Print listing
             for file in listing:
                 print(file)
@@ -343,9 +344,10 @@ def send_parsing_check(sock, error_occurred, *args):
 # This method calculates speed of transmission and better looking filesize (in B, KB, MB, ...)
 def stats_for_nerds(size, t):
     grade = 0
-    while size / 2 ** (10 * grade) > 1:
-        grade += 1
-    grade -= 1
+    if not size == 0:
+        while size / 2 ** (10 * grade) > 1:
+            grade += 1
+        grade -= 1
     size = size / 2 ** (10 * grade)
     speed = f"{size / t:.2f}" + " " + grades[grade] + "ps"
     filesize = f"{size:.2f}" + " " + grades[grade]
